@@ -22,7 +22,7 @@ function varargout = u2curve(varargin)
 
 % Edit the above text to modify the response to help u2curve
 
-% Last Modified by GUIDE v2.5 28-Sep-2015 09:02:32
+% Last Modified by GUIDE v2.5 28-Sep-2015 11:17:48
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -56,11 +56,16 @@ const_u = 2;
 amp_u = 0.2;
 
 handles.t = 0:0.01:20;
-handles.u = const_u + const_u * amp_u * sin(handles.t);
-[handles.phi, handles.ro, handles.X, handles.Y, handles.G1] = u2G(handles.t, handles.u);
+handles.u = const_u * ( 1 + amp_u * sin(handles.t));
+[handles.phi, handles.ro, handles.X, handles.Y, handles.G2] = u2G(handles.t, handles.u);
 
 handles.u_stat(1:length(handles.t)) = const_u;
-[handles.phi_stat, handles.ro_stat, handles.X_stat, handles.Y_stat, handles.G1_stat] = u2G(handles.t, handles.u_stat);
+[handles.phi_stat, handles.ro_stat, handles.X_stat, handles.Y_stat, handles.G2_stat] = u2G(handles.t, handles.u_stat);
+
+handles.S = [complex(0,0) complex(1,0);
+             complex(1,0) complex(0,0)];
+
+handles.G1 = restore_G1(handles.G2, handles.S);
 
 %Plot data
 axes(handles.axes_u);
@@ -95,17 +100,19 @@ legend('X stationary', 'Y stationary', 'X', 'Y');
 
 axes(handles.axes_curve);
 hold on;
+axis equal;
 grid on;
-plot(handles.G1_stat);
-handles.plot_curve = plot(handles.G1);
-legend('G1 stationary', 'G1');
+plot(handles.G2_stat);
+handles.plot_G2 = plot(handles.G2);
+handles.plot_G1 = plot(handles.G1);
+legend('G2 stationary', 'G2', 'G1');
 
-axes(handles.axes_G1_diff);
+axes(handles.axes_G2_diff);
 hold on;
 axis equal;
 grid on;
-handles.plot_G1_diff = plot(handles.G1 - handles.G1_stat);
-legend('G1 diff');
+handles.plot_G2_diff = plot(handles.G2 - handles.G2_stat);
+legend('G2 diff');
 
 % Choose default command line output for u2curve
 handles.output = hObject;
@@ -130,6 +137,10 @@ varargout{1} = handles.output;
 
 function slider_Callback(hObject, eventdata, handles)
 tag_slider = get(hObject,'Tag');
+tag_edit = strcat('edit_', tag_slider);
+
+val = get(hObject, 'Value');
+set(findobj('Tag', tag_edit), 'String', val);
 
 tokens = regexp(tag_slider,'(\d{1})(\d{1})_([xy]{1})', 'tokens');
 i = str2double(tokens{1}{1});
@@ -138,9 +149,19 @@ is_real = tokens{1}{3};
 
 if is_real == 'x'
     is_real = true;
+    handles.S(i,j) = re_change(handles.S(i,j), val);
 else
     is_real = false;
+    handles.S(i,j) = im_change(handles.S(i,j), val);
 end
+
+handles.G1 = restore_G1(handles.G2, handles.S);
+
+set(handles.plot_G1, 'XData', real(handles.G1));
+set(handles.plot_G1, 'YData', imag(handles.G1));
+
+% Update handles structure
+guidata(hObject, handles);
 
 
 function edit_Callback(hObject, eventdata, handles)
