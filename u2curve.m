@@ -22,7 +22,7 @@ function varargout = u2curve(varargin)
 
 % Edit the above text to modify the response to help u2curve
 
-% Last Modified by GUIDE v2.5 25-Sep-2015 11:23:07
+% Last Modified by GUIDE v2.5 28-Sep-2015 09:02:32
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -55,7 +55,7 @@ function u2curve_OpeningFcn(hObject, eventdata, handles, varargin)
 const_u = 2;
 amp_u = 0.2;
 
-handles.t = 0:0.01:10;
+handles.t = 0:0.01:20;
 handles.u = const_u + const_u * amp_u * sin(handles.t);
 [handles.phi, handles.ro, handles.X, handles.Y, handles.G1] = u2G(handles.t, handles.u);
 
@@ -100,6 +100,13 @@ plot(handles.G1_stat);
 handles.plot_curve = plot(handles.G1);
 legend('G1 stationary', 'G1');
 
+axes(handles.axes_G1_diff);
+hold on;
+axis equal;
+grid on;
+handles.plot_G1_diff = plot(handles.G1 - handles.G1_stat);
+legend('G1 diff');
+
 % Choose default command line output for u2curve
 handles.output = hObject;
 
@@ -119,3 +126,41 @@ function varargout = u2curve_OutputFcn(hObject, eventdata, handles)
 
 % Get default command line output from handles structure
 varargout{1} = handles.output;
+
+
+function slider_Callback(hObject, eventdata, handles)
+tag_slider = get(hObject,'Tag');
+
+tokens = regexp(tag_slider,'(\d{1})(\d{1})_([xy]{1})', 'tokens');
+i = str2double(tokens{1}{1});
+j = str2double(tokens{1}{2});
+is_real = tokens{1}{3};
+
+if is_real == 'x'
+    is_real = true;
+else
+    is_real = false;
+end
+
+
+function edit_Callback(hObject, eventdata, handles)
+% hObject    handle to edit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit9 as text
+%        str2double(get(hObject,'String')) returns contents of edit9 as a double
+
+val = str2double(get(hObject,'String'));
+
+tag_edit = get(hObject,'Tag');
+tag_slider = regexp(tag_edit,'s\d{2}_[xy]', 'match');
+tag_slider = tag_slider{1};
+
+slider = findobj('Tag', tag_slider);
+set(slider,'Value',val);
+
+% Update handles structure
+guidata(hObject, handles);
+ 
+slider.Callback(slider, eventdata);
